@@ -13,9 +13,18 @@ def softmax(predictions):
       probs, np array of the same shape as predictions - 
         probability for every class, 0..1
     '''
-    # TODO implement softmax
-    # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
+    
+    soft_predictions = predictions.copy()
+    if predictions.ndim == 1:
+        soft_predictions -= np.max(soft_predictions)
+        soft_predictions = np.exp(soft_predictions)
+        return soft_predictions / np.sum(soft_predictions)
+    
+    for i in range(soft_predictions.shape[0]):
+        soft_predictions[i] -= np.max(soft_predictions[i])
+        soft_predictions[i] = np.exp(soft_predictions[i])
+        soft_predictions[i] = soft_predictions[i] / np.sum(soft_predictions[i])
+    return soft_predictions
 
 
 def cross_entropy_loss(probs, target_index):
@@ -31,9 +40,13 @@ def cross_entropy_loss(probs, target_index):
     Returns:
       loss: single value
     '''
-    # TODO implement cross-entropy
-    # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
+    if probs.ndim == 1:
+        return -np.log(probs[target_index])
+    loss = 0.0
+    for i in range(probs.shape[0]):
+        loss -= np.log(probs[i][target_index[i]])
+    return loss
+        
 
 
 def softmax_with_cross_entropy(predictions, target_index):
@@ -51,11 +64,17 @@ def softmax_with_cross_entropy(predictions, target_index):
       loss, single value - cross-entropy loss
       dprediction, np array same shape as predictions - gradient of predictions by loss value
     '''
-    # TODO implement softmax with cross-entropy
-    # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
-
-    return loss, dprediction
+    
+    soft_predictions = softmax(predictions)
+    loss = cross_entropy_loss(soft_predictions, target_index)
+    true_labels = np.zeros_like(soft_predictions)
+    
+    if predictions.ndim == 1:
+        true_labels[target_index] = 1.0
+    else:
+        for i in range(soft_predictions.shape[0]):
+            true_labels[i][target_index[i]] = 1.0
+    return loss, soft_predictions - true_labels
 
 
 def l2_regularization(W, reg_strength):
@@ -71,9 +90,8 @@ def l2_regularization(W, reg_strength):
       gradient, np.array same shape as W - gradient of weight by l2 loss
     '''
 
-    # TODO: implement l2 regularization and gradient
-    # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
+    loss = reg_strength * (W ** 2).sum()
+    grad = reg_strength * 2 * W
 
     return loss, grad
     
@@ -94,9 +112,8 @@ def linear_softmax(X, W, target_index):
     '''
     predictions = np.dot(X, W)
 
-    # TODO implement prediction and gradient over W
-    # Your final implementation shouldn't have any loops
-    raise Exception("Not implemented!")
+    loss, dW = softmax_with_cross_entropy(predictions, target_index)
+    dW = np.dot(X.T, dW)
     
     return loss, dW
 
@@ -132,12 +149,15 @@ class LinearSoftmaxClassifier():
             sections = np.arange(batch_size, num_train, batch_size)
             batches_indices = np.array_split(shuffled_indices, sections)
 
-            # TODO implement generating batches from indices
-            # Compute loss and gradients
-            # Apply gradient to weights using learning rate
-            # Don't forget to add both cross-entropy loss
-            # and regularization!
-            raise Exception("Not implemented!")
+            for batch_indices in batches_indices:
+                X_batch = X[batch_indices]
+                y_batch = y[batch_indices]
+                loss, grad = linear_softmax(X_batch, self.W, y_batch)
+                loss_l2, grad_l2 = l2_regularization(self.W, reg)
+                loss += loss_l2
+                grad += grad_l2
+                loss_history.append(loss)
+                self.W -= learning_rate * grad
 
             # end
             print("Epoch %i, loss: %f" % (epoch, loss))
@@ -156,11 +176,8 @@ class LinearSoftmaxClassifier():
         '''
         y_pred = np.zeros(X.shape[0], dtype=np.int)
 
-        # TODO Implement class prediction
-        # Your final implementation shouldn't have any loops
-        raise Exception("Not implemented!")
-
-        return y_pred
+        y_pred = softmax(np.dot(X, self.W))
+        return y_pred.argmax(axis=1)
 
 
 
