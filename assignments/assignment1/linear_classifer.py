@@ -2,7 +2,7 @@ import numpy as np
 
 
 def softmax(predictions):
-    '''
+    """
     Computes probabilities from scores
 
     Arguments:
@@ -12,14 +12,13 @@ def softmax(predictions):
     Returns:
       probs, np array of the same shape as predictions - 
         probability for every class, 0..1
-    '''
+    """
     
     soft_predictions = predictions.copy()
     if predictions.ndim == 1:
         soft_predictions -= np.max(soft_predictions)
         soft_predictions = np.exp(soft_predictions)
         return soft_predictions / np.sum(soft_predictions)
-    
     for i in range(soft_predictions.shape[0]):
         soft_predictions[i] -= np.max(soft_predictions[i])
         soft_predictions[i] = np.exp(soft_predictions[i])
@@ -28,7 +27,7 @@ def softmax(predictions):
 
 
 def cross_entropy_loss(probs, target_index):
-    '''
+    """
     Computes cross-entropy loss
 
     Arguments:
@@ -39,7 +38,8 @@ def cross_entropy_loss(probs, target_index):
 
     Returns:
       loss: single value
-    '''
+    """
+
     if probs.ndim == 1:
         return -np.log(probs[target_index])
     loss = 0.0
@@ -48,9 +48,8 @@ def cross_entropy_loss(probs, target_index):
     return loss
         
 
-
 def softmax_with_cross_entropy(predictions, target_index):
-    '''
+    """
     Computes softmax and cross-entropy loss for model predictions,
     including the gradient
 
@@ -63,7 +62,7 @@ def softmax_with_cross_entropy(predictions, target_index):
     Returns:
       loss, single value - cross-entropy loss
       dprediction, np array same shape as predictions - gradient of predictions by loss value
-    '''
+    """
     
     soft_predictions = softmax(predictions)
     loss = cross_entropy_loss(soft_predictions, target_index)
@@ -71,14 +70,14 @@ def softmax_with_cross_entropy(predictions, target_index):
     
     if predictions.ndim == 1:
         true_labels[target_index] = 1.0
-    else:
-        for i in range(soft_predictions.shape[0]):
+        return loss, soft_predictions - true_labels
+    for i in range(soft_predictions.shape[0]):
             true_labels[i][target_index[i]] = 1.0
-    return loss, soft_predictions - true_labels
+    return loss / soft_predictions.shape[0], (soft_predictions - true_labels) / soft_predictions.shape[0]
 
 
 def l2_regularization(W, reg_strength):
-    '''
+    """
     Computes L2 regularization loss on weights and its gradient
 
     Arguments:
@@ -88,7 +87,7 @@ def l2_regularization(W, reg_strength):
     Returns:
       loss, single value - l2 regularization loss
       gradient, np.array same shape as W - gradient of weight by l2 loss
-    '''
+    """
 
     loss = reg_strength * (W ** 2).sum()
     grad = reg_strength * 2 * W
@@ -97,7 +96,7 @@ def l2_regularization(W, reg_strength):
     
 
 def linear_softmax(X, W, target_index):
-    '''
+    """
     Performs linear classification and returns loss and gradient over W
 
     Arguments:
@@ -109,11 +108,12 @@ def linear_softmax(X, W, target_index):
       loss, single value - cross-entropy loss
       gradient, np.array same shape as W - gradient of weight by loss
 
-    '''
-    predictions = np.dot(X, W)
+    """
+
+    predictions = X @ W
 
     loss, dW = softmax_with_cross_entropy(predictions, target_index)
-    dW = np.dot(X.T, dW)
+    dW = X.T @ dW
     
     return loss, dW
 
@@ -124,7 +124,7 @@ class LinearSoftmaxClassifier():
 
     def fit(self, X, y, batch_size=100, learning_rate=1e-7, reg=1e-5,
             epochs=1):
-        '''
+        """
         Trains linear classifier
         
         Arguments:
@@ -134,7 +134,7 @@ class LinearSoftmaxClassifier():
           learning_rate, float - learning rate for gradient descent
           reg, float - L2 regularization strength
           epochs, int - number of epochs
-        '''
+        """
 
         num_train = X.shape[0]
         num_features = X.shape[1]
@@ -158,14 +158,12 @@ class LinearSoftmaxClassifier():
                 grad += grad_l2
                 loss_history.append(loss)
                 self.W -= learning_rate * grad
-
-            # end
             print("Epoch %i, loss: %f" % (epoch, loss))
 
         return loss_history
 
     def predict(self, X):
-        '''
+        """
         Produces classifier predictions on the set
        
         Arguments:
@@ -173,17 +171,7 @@ class LinearSoftmaxClassifier():
 
         Returns:
           y_pred, np.array of int (test_samples)
-        '''
-        y_pred = np.zeros(X.shape[0], dtype=np.int)
+        """
 
         y_pred = softmax(np.dot(X, self.W))
         return y_pred.argmax(axis=1)
-
-
-
-                
-                                                          
-
-            
-
-                
